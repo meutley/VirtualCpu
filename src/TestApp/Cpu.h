@@ -59,3 +59,10 @@ private:    // Instruction Processors
 	void DoAdd(const vector<byte>& pProgram);
 };
 
+
+static const map<string, byte> CpuRegisterMap
+{
+	pair<string, byte>("D0", Cpu::D0),
+	pair<string, byte>("D1", Cpu::D1)
+};
+

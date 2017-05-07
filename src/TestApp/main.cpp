@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Cpu.h"
+#include "Assembler.h"
 
 
 using namespace std;
@@ -10,20 +10,16 @@ using namespace std;
 
 int main()
 {
+	vector<string> code;
+	code.push_back("SET D0, 3");
+	code.push_back("SET D1, 7");
+	code.push_back("ADD D0, D1");
+
+	Assembler* assembler = new Assembler();
+	auto instructions = assembler->Assemble(code);
+
 	Cpu* cpu = new Cpu();
-
-	vector<byte> program;
-	program.push_back(Cpu::SET);
-	program.push_back(Cpu::D0);
-	program.push_back(17);
-	program.push_back(Cpu::SET);
-	program.push_back(Cpu::D1);
-	program.push_back(5);
-	program.push_back(Cpu::ADD);
-	program.push_back(Cpu::D0);
-	program.push_back(Cpu::D1);
-
-	cpu->Execute(program);
+	cpu->Execute(instructions);
 
 	return 0;
 }
