@@ -84,6 +84,9 @@
     <ClInclude Include="Assembler.h" />
     <ClInclude Include="Cpu.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="SampleProgram.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

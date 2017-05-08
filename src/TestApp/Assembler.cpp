@@ -32,6 +32,12 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 	for (auto it = pCode.begin(); it != pCode.end(); it++)
 	{
 		auto line = this->Split(Trim(*it));
+		if (line[0].length() == 0 || line[0][0] == '#')
+		{
+			m_currentLine++;
+			continue;
+		}
+
 		auto combinedOperands = CombineStrings(line, 1);
 		auto operands = ParseOperands(combinedOperands);
 		
@@ -73,6 +79,14 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 			{
 				return vector<byte>();
 			}
+		}
+		else
+		{
+			cout << endl << "ERROR: OpCode not recognized." << endl;
+			cout << "   LINE: " << m_currentLine << endl;
+			cout << "      >> " << m_code[m_currentLine] << endl;
+
+			return vector<byte>();
 		}
 
 		m_currentLine++;
@@ -169,6 +183,11 @@ vector<string> Assembler::ParseOperands(const string& input, const byte& separat
 			break;
 		}
 
+		if (trimmed[0] == '#')    // Ignore comments
+		{
+			continue;
+		}
+
 		while (trimmed[index] == ' ')    // Skip whitespace
 		{
 			index++;
@@ -209,7 +228,9 @@ bool Assembler::IsRegisterValid(const string& registerName)
 {
 	if (CpuRegisterMap.find(registerName) == CpuRegisterMap.end())
 	{
-		cout << "ERROR: Register name " << registerName << " not found at line " << (m_currentLine + 1) << endl;
+		cout << "ERROR: Register \"" << registerName << "\" not found.";
+		cout << "   LINE: " << (m_currentLine + 1) << endl;
+		cout << "      >> " << m_code[m_currentLine] << endl;
 		return false;
 	}
 
@@ -268,7 +289,7 @@ bool Assembler::ParseSet(const vector<string>& operands)
 			cout << "ERROR: INVALID OPERAND" << endl;
 			cout << "   Right operand must be a valid integer, current = " << operands[1] << endl;
 			cout << "   LINE: " << (m_currentLine + 1) << endl;
-			cout << "      " << m_code[m_currentLine];
+			cout << "      >> " << m_code[m_currentLine];
 			return false;
 		}
 		catch (out_of_range outOfRange)
@@ -300,6 +321,10 @@ bool Assembler::ParseArithmetic(Cpu::Instruction instruction, const vector<strin
 		if (IsRegisterValid(leftOperand) && IsRegisterValid(rightOperand))
 		{
 			AddInstruction(instruction, GetRegisterId(leftOperand), GetRegisterId(rightOperand));
+		}
+		else
+		{
+			return false;
 		}
 	}
 	else

@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -8,30 +9,47 @@
 using namespace std;
 
 
+const string SampleProgramPath = "../TestApp/SampleProgram.txt";
+
 int main()
 {
+	cout << "Loading sample program at " << SampleProgramPath << "..." << endl << endl;
+
+	ifstream infile(SampleProgramPath);
+	// Make sure file is open
+	if (!infile.is_open())
+	{
+		cout << "Failed to open sample program: " << SampleProgramPath << endl << endl;
+		return 99;
+	}
+
+	// Read the sample program into memory
 	vector<string> code;
-	// Add
-	code.push_back("SET D0, 3");
-	code.push_back("SET D1, 7");
-	code.push_back("ADD D0, D1");
 
-	// Subtract
-	code.push_back("SET D1, 5");
-	code.push_back("SUBTRACT D0, D1");
+	string line;
+	while (getline(infile, line))
+	{
+		code.push_back(line);
+	}
 
-	// Bitwise OR
-	// D0 = 5 (0101)
-	// D1 = 2 (0010)
-	// D0 OR D1 = 0111 (7)
-	code.push_back("SET D1, 2");
-	code.push_back("OR D0, D1");
+	cout << "Assembling sample program..." << endl << endl;
 
 	Assembler assembler;
 	auto instructions = assembler.Assemble(code);
 
-	Cpu cpu;
-	cpu.Execute(instructions);
+	if (instructions.size() == 0)
+	{
+		cout << endl << "No instructions generated. Program assembly failed?" << endl << endl;
+	}
+	else
+	{
+		cout << "Pushing assembled program to virtual CPU..." << endl << endl;
+
+		Cpu cpu;
+		cpu.Execute(instructions);
+
+		cout << "Program execution complete..." << endl << endl;
+	}
 
 	return 0;
 }
