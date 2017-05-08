@@ -29,6 +29,7 @@ private:    // Code
 	string Trim(const string& input);
 	string CombineStrings(const vector<string>& input, const int& startFrom = 0);
 	vector<string> ParseOperands(const string& input, const byte& separator = Assembler::OPERAND_SEPARATOR);
+	bool ParseByte(const string& value);
 
 	bool CheckOperands(const vector<string>& operands, const int& expectedCount);
 	bool IsRegisterValid(const string& registerName);
@@ -40,6 +41,7 @@ private:    // Code
 	static const string SUBTRACT;
 	static const string AND;
 	static const string OR;
+	static const string PRINT;
 
 	static const byte OPERAND_SEPARATOR;
 
@@ -47,6 +49,7 @@ private:    // Code
 private:    // Instructions and CPU
 	const byte& GetRegisterId(const string& name);
 
+	void AddInstruction(const byte& instruction, const byte& operand);
 	void AddInstruction(const byte& instruction, const byte& leftOperand, const byte& rightOperand);
 
 	// Assignment
@@ -60,6 +63,9 @@ private:    // Instructions and CPU
 	// Bitwise
 	bool ParseAnd(const vector<string>& operands);
 	bool ParseOr(const vector<string>& operands);
+
+	// Output
+	bool ParsePrint(const vector<string>& operands);
 
 
 private:    // Output

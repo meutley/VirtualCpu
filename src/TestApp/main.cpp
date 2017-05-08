@@ -9,6 +9,7 @@
 using namespace std;
 
 
+const bool DumpOnProcessInstructions = false;
 const string SampleProgramPath = "../TestApp/SampleProgram.txt";
 
 int main()
@@ -46,9 +47,9 @@ int main()
 		cout << "Pushing assembled program to virtual CPU..." << endl << endl;
 
 		Cpu cpu;
-		cpu.Execute(instructions);
+		cpu.Execute(instructions, DumpOnProcessInstructions);
 
-		cout << "Program execution complete..." << endl << endl;
+		cout << endl << "Program execution complete..." << endl << endl;
 	}
 
 	return 0;

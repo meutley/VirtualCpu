@@ -4,6 +4,9 @@
 #include "Cpu.h"
 
 
+const byte Cpu::MAX = 255;
+
+
 Cpu::Cpu()
 {
 	Reset();
@@ -24,9 +27,11 @@ void Cpu::Reset()
 
 /* ========== Main ==========*/
 
-void Cpu::Execute(vector<byte>& pProgram, const bool& pHaltOnOverflow, const bool& pHaltOnUnderflow)
+void Cpu::Execute(vector<byte>& pProgram, const bool& pDumpOnProcessInstructions, const bool& pHaltOnOverflow, const bool& pHaltOnUnderflow)
 {
 	Reset();
+
+	m_dumpOnProcessInstructions = pDumpOnProcessInstructions;
 
 	m_haltOnOverflow = pHaltOnOverflow;
 	m_haltOnUnderflow = pHaltOnUnderflow;
@@ -55,9 +60,16 @@ void Cpu::Execute(vector<byte>& pProgram, const bool& pHaltOnOverflow, const boo
 		case AND:
 			DoAnd(pProgram);
 			break;
-
 		case OR:
 			DoOr(pProgram);
+			break;
+
+		// Output
+		case PRINTR:
+			DoPrintRegister(pProgram);
+			break;
+		case PRINT:
+			DoPrintValue(pProgram);
 			break;
 		}
 
@@ -99,6 +111,7 @@ void Cpu::ResetRegisters()
 	m_registerIds.push_back(Cpu::Register::D1);
 
 	m_registers.clear();
+	// Zero out all registers
 	for (auto rnit = m_registerIds.begin(); rnit != m_registerIds.end(); rnit++)
 	{
 		this->m_registers.insert(pair<byte, byte>(*rnit, 0));
@@ -108,6 +121,19 @@ void Cpu::ResetRegisters()
 bool Cpu::IsValidRegisterId(const byte& pRegisterId)
 {
 	return m_registers.find(pRegisterId) != m_registers.end();
+}
+
+string Cpu::GetRegisterName(const byte& pRegisterId)
+{
+	for (auto it = CpuRegisterMap.begin(); it != CpuRegisterMap.end(); it++)
+	{
+		if (it->second == pRegisterId)
+		{
+			return it->first;
+		}
+	}
+
+	return "";
 }
 
 
@@ -129,9 +155,9 @@ void Cpu::CheckArithmeticResult(int& result)
 		result = 0;
 		m_isUnderflow = true;
 	}
-	else if (result > 255)
+	else if (result > Cpu::MAX)
 	{
-		result = 255;
+		result = Cpu::MAX;
 		m_isOverflow = true;
 	}
 }
@@ -146,8 +172,11 @@ void Cpu::DoSet(const vector<byte>& pProgram)
 		m_registers[destinationRegisterId] = pProgram[m_programCounter++];
 	}
 
-	cout << "SET instruction called..." << endl;
-	Dump();
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "SET instruction called..." << endl;
+		Dump();
+	}
 }
 
 /* ========== Arithmetic ========== */
@@ -168,8 +197,11 @@ void Cpu::DoAdd(const vector<byte>& pProgram)
 		m_registers[destinationRegisterId] = left + right;
 	}
 
-	cout << "ADD instruction called..." << endl;
-	Dump();
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "ADD instruction called..." << endl;
+		Dump();
+	}
 }
 
 void Cpu::DoSubtract(const vector<byte>& pProgram)
@@ -188,8 +220,11 @@ void Cpu::DoSubtract(const vector<byte>& pProgram)
 		m_registers[destinationRegisterId] = left - right;
 	}
 
-	cout << "SUBTRACT instruction called..." << endl;
-	Dump();
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "SUBTRACT instruction called..." << endl;
+		Dump();
+	}
 }
 
 /* ========== Bitwise ========== */
@@ -210,8 +245,11 @@ void Cpu::DoAnd(const vector<byte>& pProgram)
 		m_registers[destinationRegisterId] = left & right;
 	}
 
-	cout << "AND instruction called..." << endl;
-	Dump();
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "AND instruction called..." << endl;
+		Dump();
+	}
 }
 
 void Cpu::DoOr(const vector<byte>& pProgram)
@@ -230,6 +268,43 @@ void Cpu::DoOr(const vector<byte>& pProgram)
 		m_registers[destinationRegisterId] = left | right;
 	}
 
-	cout << "OR instruction called..." << endl;
-	Dump();
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "OR instruction called..." << endl;
+		Dump();
+	}
+}
+
+/* ========== Output ========== */
+
+void Cpu::DoPrintRegister(const vector<byte>& pProgram)
+{
+	byte registerId = pProgram[m_programCounter++];
+
+	if (IsValidRegisterId(registerId))
+	{
+		string registerName = GetRegisterName(registerId);
+		auto value = static_cast<int>(m_registers[registerId]);
+		cout << "PRINTR (" << registerName << "): " << value << endl;
+	}
+
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << endl << "PRINTR instruction called..." << endl;
+		Dump();
+	}
+}
+
+void Cpu::DoPrintValue(const vector<byte>& pProgram)
+{
+	byte programValue = pProgram[m_programCounter++];
+
+	auto value = static_cast<int>(programValue);
+	cout << "PRINT: " << value << endl;
+
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << endl << "PRINT instruction called..." << endl;
+		Dump();
+	}
 }

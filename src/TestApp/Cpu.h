@@ -30,7 +30,11 @@ public:
 
 		// Bitwise
 		AND,
-		OR
+		OR,
+
+		// Output
+		PRINTR,    // Print register
+		PRINT      // Print value
 	};
 
 	enum Register
@@ -39,7 +43,9 @@ public:
 		D1
 	};
 
-	void Execute(vector<byte>& pProgram, const bool& pHaltOnOverflow = true, const bool& pHaltOnUnderflow = true);
+	static const byte MAX;
+
+	void Execute(vector<byte>& pProgram, const bool& pDumpOnProcessInstructions = true, const bool& pHaltOnOverflow = true, const bool& pHaltOnUnderflow = true);
 	void Dump();
 
 private:    // Registers
@@ -50,9 +56,12 @@ private:    // Registers
 
 	void ResetRegisters();
 	bool IsValidRegisterId(const byte& registerId);
+	string GetRegisterName(const byte& registerId);
 
 private:    // Program
 	byte m_programCounter;
+
+	bool m_dumpOnProcessInstructions;
 
 	bool m_isOverflow;
 	bool m_isUnderflow;
@@ -74,6 +83,11 @@ private:    // Instruction Processors
 	// Bitwise
 	void DoAnd(const vector<byte>& pProgram);
 	void DoOr(const vector<byte>& pProgram);
+
+	// Output
+	void DoPrint(const byte& value);
+	void DoPrintRegister(const vector<byte>& pProgram);
+	void DoPrintValue(const vector<byte>& pProgram);
 };
 
 

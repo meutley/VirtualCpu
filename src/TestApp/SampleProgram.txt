@@ -23,3 +23,9 @@ SUBTRACT D0, D1
 #   D0 OR D1 = 0111 (7)
 SET	D1, 2
 OR	D0, D1
+
+
+# Output
+PRINT D0   # Print value of register D0
+PRINT D1   # Print value of register D1
+PRINT 128  # Print raw byte value

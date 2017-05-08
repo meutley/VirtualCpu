@@ -10,6 +10,7 @@ const string Assembler::ADD = string("ADD");
 const string Assembler::SUBTRACT = string("SUBTRACT");
 const string Assembler::AND = string("AND");
 const string Assembler::OR = string("OR");
+const string Assembler::PRINT = string("PRINT");
 
 const byte Assembler::OPERAND_SEPARATOR = ',';
 
@@ -76,6 +77,13 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 		else if (opCode == Assembler::OR)
 		{
 			if (!ParseOr(operands))
+			{
+				return vector<byte>();
+			}
+		}
+		else if (opCode == Assembler::PRINT)
+		{
+			if (!ParsePrint(operands))
 			{
 				return vector<byte>();
 			}
@@ -183,9 +191,16 @@ vector<string> Assembler::ParseOperands(const string& input, const byte& separat
 			break;
 		}
 
-		if (trimmed[0] == '#')    // Ignore comments
+		if (trimmed[0] == '#')    // Ignore comments on single line
 		{
 			continue;
+		}
+
+		// Ignore comments on same line as command
+		auto commentPosition = trimmed.find_first_of('#');
+		if (commentPosition <= trimmed.length())
+		{
+			trimmed = trimmed.substr(0, commentPosition);
 		}
 
 		while (trimmed[index] == ' ')    // Skip whitespace
@@ -211,6 +226,24 @@ vector<string> Assembler::ParseOperands(const string& input, const byte& separat
 	}
 	
 	return result;
+}
+
+bool Assembler::ParseByte(const string& value)
+{
+	if (value.length() == 0)
+	{
+		return false;
+	}
+
+	for (int x = 0; x < value.length(); x++)
+	{
+		if (!isdigit(value[x]))
+		{
+			return false;
+		}
+	}
+
+	return ToByte(stoi(value));
 }
 
 bool Assembler::CheckOperands(const vector<string>& operands, const int& expectedCount)
@@ -239,12 +272,12 @@ bool Assembler::IsRegisterValid(const string& registerName)
 
 byte Assembler::ToByte(int value)
 {
-	if (value >= 0 && value <= 255)
+	if (value >= 0 && value <= Cpu::MAX)
 	{
 		return (byte)value;
 	}
 
-	throw out_of_range("value must be between 0 and 255");
+	throw out_of_range("value must be between 0 and " + std::to_string((int)Cpu::MAX));
 }
 
 const byte& Assembler::GetRegisterId(const string& name)
@@ -255,6 +288,12 @@ const byte& Assembler::GetRegisterId(const string& name)
 	}
 
 	return byte();
+}
+
+void Assembler::AddInstruction(const byte& instruction, const byte& operand)
+{
+	m_instructions.push_back(instruction);
+	m_instructions.push_back(operand);
 }
 
 void Assembler::AddInstruction(const byte& instruction, const byte& leftOperand, const byte& rightOperand)
@@ -295,7 +334,7 @@ bool Assembler::ParseSet(const vector<string>& operands)
 		catch (out_of_range outOfRange)
 		{
 			cout << "ERROR: INVALID OPERAND" << endl;
-			cout << "   Right operand out of range (min = 0, max = 255), current = " << operands[1] << endl;
+			cout << "   Right operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << operands[1] << endl;
 			cout << "   LINE: " << (m_currentLine + 1) << endl;
 			cout << "      >> " << m_code[m_currentLine] << endl;
 			return false;
@@ -355,4 +394,59 @@ bool Assembler::ParseAnd(const vector<string>& operands)
 bool Assembler::ParseOr(const vector<string>& operands)
 {
 	return ParseArithmetic(Cpu::Instruction::OR, operands);
+}
+
+/* ========== Output ========== */
+
+bool Assembler::ParsePrint(const vector<string>& operands)
+{
+	if (CheckOperands(operands, 1))
+	{
+		auto printOperand = operands[0];
+
+		if (isalpha(printOperand[0]) && IsRegisterValid(printOperand))
+		{
+			// Print a register's value
+			AddInstruction(Cpu::Instruction::PRINTR, GetRegisterId(printOperand));
+		}
+		else if (!isalpha(printOperand[0]))
+		{
+			// Print a raw byte value
+			try
+			{
+				// Attempt to parse the operand as a byte and add the instruction if valid
+				if (ParseByte(printOperand))
+				{
+					auto value = ToByte(stoi(printOperand));
+					AddInstruction(Cpu::Instruction::PRINT, value);
+				}
+				else    // Could not parse byte
+				{
+					cout << "ERROR: INVALID OPERAND" << endl;
+					cout << "   Operand not a valid byte (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << printOperand << endl;
+					cout << "   LINE: " << (m_currentLine + 1) << endl;
+					cout << "      >> " << m_code[m_currentLine] << endl;
+					return false;
+				}
+			}
+			catch (out_of_range outOfRange)    // Value out of range for byte type
+			{
+				cout << "ERROR: INVALID OPERAND" << endl;
+				cout << "   Operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << operands[0] << endl;
+				cout << "   LINE: " << (m_currentLine + 1) << endl;
+				cout << "      >> " << m_code[m_currentLine] << endl;
+				return false;
+			}
+		}
+		else    // Not a recognized command
+		{
+			return false;
+		}
+	}
+	else    // Invalid operand(s)
+	{
+		return false;
+	}
+
+	return true;
 }
