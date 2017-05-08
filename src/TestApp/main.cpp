@@ -21,6 +21,9 @@ int main()
 	code.push_back("SUBTRACT D0, D1");
 
 	// Bitwise OR
+	// D0 = 5 (0101)
+	// D1 = 2 (0010)
+	// D0 OR D1 = 0111 (7)
 	code.push_back("SET D1, 2");
 	code.push_back("OR D0, D1");
 
