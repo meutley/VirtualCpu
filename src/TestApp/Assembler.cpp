@@ -8,6 +8,8 @@
 const string Assembler::SET = string("SET");
 const string Assembler::ADD = string("ADD");
 const string Assembler::SUBTRACT = string("SUBTRACT");
+const string Assembler::AND = string("AND");
+const string Assembler::OR = string("OR");
 
 const byte Assembler::OPERAND_SEPARATOR = ',';
 
@@ -25,6 +27,7 @@ Assembler::~Assembler()
 
 vector<byte> Assembler::Assemble(const vector<string>& pCode)
 {
+	m_code = pCode;
 	m_currentLine = 0;
 	for (auto it = pCode.begin(); it != pCode.end(); it++)
 	{
@@ -33,6 +36,7 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 		auto operands = ParseOperands(combinedOperands);
 		
 		auto opCode = line[0];
+		// Assignment
 		if (opCode == Assembler::SET)
 		{
 			if (!ParseSet(operands))
@@ -40,9 +44,32 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 				return vector<byte>();
 			}
 		}
+		// Arithmetic
 		else if (opCode == Assembler::ADD)
 		{
 			if (!ParseAdd(operands))
+			{
+				return vector<byte>();
+			}
+		}
+		else if (opCode == Assembler::SUBTRACT)
+		{
+			if (!ParseSubtract(operands))
+			{
+				return vector<byte>();
+			}
+		}
+		// Bitwise
+		else if (opCode == Assembler::AND)
+		{
+			if (!ParseAnd(operands))
+			{
+				return vector<byte>();
+			}
+		}
+		else if (opCode == Assembler::OR)
+		{
+			if (!ParseOr(operands))
 			{
 				return vector<byte>();
 			}
@@ -189,6 +216,16 @@ bool Assembler::IsRegisterValid(const string& registerName)
 	return true;
 }
 
+byte Assembler::ToByte(int value)
+{
+	if (value >= 0 && value <= 255)
+	{
+		return (byte)value;
+	}
+
+	throw out_of_range("value must be between 0 and 255");
+}
+
 const byte& Assembler::GetRegisterId(const string& name)
 {
 	if (IsRegisterValid(name))
@@ -206,6 +243,8 @@ void Assembler::AddInstruction(const byte& instruction, const byte& leftOperand,
 	m_instructions.push_back(rightOperand);
 }
 
+/* ========== Assignment ========== */
+
 bool Assembler::ParseSet(const vector<string>& operands)
 {
 	if (CheckOperands(operands, 2))
@@ -213,7 +252,7 @@ bool Assembler::ParseSet(const vector<string>& operands)
 		try
 		{
 			auto leftOperand = operands[0];
-			auto rightOperand = stoi(operands[1]);
+			auto rightOperand = ToByte(stoi(operands[1]));
 
 			if (IsRegisterValid(leftOperand))
 			{
@@ -229,14 +268,38 @@ bool Assembler::ParseSet(const vector<string>& operands)
 			cout << "ERROR: INVALID OPERAND" << endl;
 			cout << "   Right operand must be a valid integer, current = " << operands[1] << endl;
 			cout << "   LINE: " << (m_currentLine + 1) << endl;
+			cout << "      " << m_code[m_currentLine];
 			return false;
 		}
 		catch (out_of_range outOfRange)
 		{
 			cout << "ERROR: INVALID OPERAND" << endl;
-			cout << "   Right operand out of range(max = 255), current = " << operands[1] << endl;
+			cout << "   Right operand out of range (min = 0, max = 255), current = " << operands[1] << endl;
 			cout << "   LINE: " << (m_currentLine + 1) << endl;
+			cout << "      >> " << m_code[m_currentLine] << endl;
 			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+/* ========== Arithmetic ========== */
+
+bool Assembler::ParseArithmetic(Cpu::Instruction instruction, const vector<string>& operands)
+{
+	if (CheckOperands(operands, 2))
+	{
+		auto leftOperand = operands[0];
+		auto rightOperand = operands[1];
+
+		if (IsRegisterValid(leftOperand) && IsRegisterValid(rightOperand))
+		{
+			AddInstruction(instruction, GetRegisterId(leftOperand), GetRegisterId(rightOperand));
 		}
 	}
 	else
@@ -249,20 +312,22 @@ bool Assembler::ParseSet(const vector<string>& operands)
 
 bool Assembler::ParseAdd(const vector<string>& operands)
 {
-	if (CheckOperands(operands, 2))
-	{
-		auto leftOperand = operands[0];
-		auto rightOperand = operands[1];
+	return ParseArithmetic(Cpu::Instruction::ADD, operands);
+}
 
-		if (IsRegisterValid(leftOperand) && IsRegisterValid(rightOperand))
-		{
-			AddInstruction(Cpu::ADD, GetRegisterId(leftOperand), GetRegisterId(rightOperand));
-		}
-	}
-	else
-	{
-		return false;
-	}
+bool Assembler::ParseSubtract(const vector<string>& operands)
+{
+	return ParseArithmetic(Cpu::Instruction::SUBTRACT, operands);
+}
 
-	return true;
+/* ========== Bitwise ========== */
+
+bool Assembler::ParseAnd(const vector<string>& operands)
+{
+	return ParseArithmetic(Cpu::Instruction::AND, operands);
+}
+
+bool Assembler::ParseOr(const vector<string>& operands)
+{
+	return ParseArithmetic(Cpu::Instruction::OR, operands);
 }

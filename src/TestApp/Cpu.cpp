@@ -38,11 +38,26 @@ void Cpu::Execute(vector<byte>& pProgram, const bool& pHaltOnOverflow, const boo
 
 		switch (m_instructionRegister)
 		{
+		// Assignment
 		case SET:
 			DoSet(pProgram);
 			break;
+
+		// Arithmetic
 		case ADD:
 			DoAdd(pProgram);
+			break;
+		case SUBTRACT:
+			DoSubtract(pProgram);
+			break;
+
+		// Bitwise
+		case AND:
+			DoAnd(pProgram);
+			break;
+
+		case OR:
+			DoOr(pProgram);
 			break;
 		}
 
@@ -63,9 +78,13 @@ void Cpu::Execute(vector<byte>& pProgram, const bool& pHaltOnOverflow, const boo
 void Cpu::Dump()
 {
 	cout << "=============== REGISTER DUMP ===============" << endl << endl;
-	for (auto it = m_registers.begin(); it != m_registers.end(); it++)
+	for (auto it = CpuRegisterMap.begin(); it != CpuRegisterMap.end(); it++)
 	{
-		cout << "[D" << static_cast<int>(it->first) << "] : " << static_cast<int>(it->second) << endl;
+		auto reg = m_registers.find(it->second);
+		if (reg != m_registers.end())
+		{
+			cout << "[" << it->first << "] : " << static_cast<int>(reg->second) << endl;
+		}
 	}
 	cout << endl << "=============================================" << endl << endl << endl;
 }
@@ -76,8 +95,8 @@ void Cpu::Dump()
 void Cpu::ResetRegisters()
 {
 	m_registerIds.clear();
-	m_registerIds.push_back(Cpu::Registers::D0);
-	m_registerIds.push_back(Cpu::Registers::D1);
+	m_registerIds.push_back(Cpu::Register::D0);
+	m_registerIds.push_back(Cpu::Register::D1);
 
 	m_registers.clear();
 	for (auto rnit = m_registerIds.begin(); rnit != m_registerIds.end(); rnit++)
@@ -103,6 +122,22 @@ void Cpu::ResetProgram()
 	m_haltOnUnderflow = false;
 }
 
+void Cpu::CheckArithmeticResult(int& result)
+{
+	if (result < 0)
+	{
+		result = 0;
+		m_isUnderflow = true;
+	}
+	else if (result > 255)
+	{
+		result = 255;
+		m_isOverflow = true;
+	}
+}
+
+/* ========== Assignment ========== */
+
 void Cpu::DoSet(const vector<byte>& pProgram)
 {
 	byte destinationRegisterId = pProgram[m_programCounter++];
@@ -115,6 +150,8 @@ void Cpu::DoSet(const vector<byte>& pProgram)
 	Dump();
 }
 
+/* ========== Arithmetic ========== */
+
 void Cpu::DoAdd(const vector<byte>& pProgram)
 {
 	byte destinationRegisterId = pProgram[m_programCounter++];
@@ -126,14 +163,73 @@ void Cpu::DoAdd(const vector<byte>& pProgram)
 		auto right = static_cast<int>(m_registers[sourceRegisterId]);
 
 		int sum = left + right;
-		if (sum > 255)
-		{
-			m_isOverflow = true;
-		}
+		CheckArithmeticResult(sum);
 		
 		m_registers[destinationRegisterId] = left + right;
 	}
 
 	cout << "ADD instruction called..." << endl;
+	Dump();
+}
+
+void Cpu::DoSubtract(const vector<byte>& pProgram)
+{
+	byte destinationRegisterId = pProgram[m_programCounter++];
+	byte sourceRegisterId = pProgram[m_programCounter++];
+
+	if (IsValidRegisterId(destinationRegisterId) && IsValidRegisterId(sourceRegisterId))
+	{
+		auto left = static_cast<int>(m_registers[destinationRegisterId]);
+		auto right = static_cast<int>(m_registers[sourceRegisterId]);
+
+		int difference = left - right;
+		CheckArithmeticResult(difference);
+
+		m_registers[destinationRegisterId] = left - right;
+	}
+
+	cout << "SUBTRACT instruction called..." << endl;
+	Dump();
+}
+
+/* ========== Bitwise ========== */
+
+void Cpu::DoAnd(const vector<byte>& pProgram)
+{
+	byte destinationRegisterId = pProgram[m_programCounter++];
+	byte sourceRegisterId = pProgram[m_programCounter++];
+
+	if (IsValidRegisterId(destinationRegisterId) && IsValidRegisterId(sourceRegisterId))
+	{
+		auto left = static_cast<int>(m_registers[destinationRegisterId]);
+		auto right = static_cast<int>(m_registers[sourceRegisterId]);
+
+		int result = left & right;
+		CheckArithmeticResult(result);
+
+		m_registers[destinationRegisterId] = left & right;
+	}
+
+	cout << "AND instruction called..." << endl;
+	Dump();
+}
+
+void Cpu::DoOr(const vector<byte>& pProgram)
+{
+	byte destinationRegisterId = pProgram[m_programCounter++];
+	byte sourceRegisterId = pProgram[m_programCounter++];
+
+	if (IsValidRegisterId(destinationRegisterId) && IsValidRegisterId(sourceRegisterId))
+	{
+		auto left = static_cast<int>(m_registers[destinationRegisterId]);
+		auto right = static_cast<int>(m_registers[sourceRegisterId]);
+
+		int result = left | right;
+		CheckArithmeticResult(result);
+
+		m_registers[destinationRegisterId] = left | right;
+	}
+
+	cout << "OR instruction called..." << endl;
 	Dump();
 }

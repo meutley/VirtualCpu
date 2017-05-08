@@ -19,14 +19,21 @@ public:
 
 	void Reset();
 
-	enum Instructions
+	enum Instruction
 	{
+		// Assignment
 		SET = 0,
+
+		// Arithmetic
 		ADD,
-		SUBTRACT
+		SUBTRACT,
+
+		// Bitwise
+		AND,
+		OR
 	};
 
-	enum Registers
+	enum Register
 	{
 		D0 = 0,
 		D1
@@ -54,15 +61,25 @@ private:    // Program
 
 	void ResetProgram();
 
+	void CheckArithmeticResult(int& result);
+
 private:    // Instruction Processors
+	// Assignment
 	void DoSet(const vector<byte>& pProgram);
+
+	// Arithmetic
 	void DoAdd(const vector<byte>& pProgram);
+	void DoSubtract(const vector<byte>& pProgram);
+
+	// Bitwise
+	void DoAnd(const vector<byte>& pProgram);
+	void DoOr(const vector<byte>& pProgram);
 };
 
 
 static const map<string, byte> CpuRegisterMap
 {
-	pair<string, byte>("D0", Cpu::D0),
-	pair<string, byte>("D1", Cpu::D1)
+	pair<string, byte>("D0", Cpu::Register::D0),
+	pair<string, byte>("D1", Cpu::Register::D1)
 };
 

@@ -32,10 +32,14 @@ private:    // Code
 
 	bool CheckOperands(const vector<string>& operands, const int& expectedCount);
 	bool IsRegisterValid(const string& registerName);
+	byte ToByte(int value);
 
+	// Instruction names
 	static const string SET;
 	static const string ADD;
 	static const string SUBTRACT;
+	static const string AND;
+	static const string OR;
 
 	static const byte OPERAND_SEPARATOR;
 
@@ -45,8 +49,17 @@ private:    // Instructions and CPU
 
 	void AddInstruction(const byte& instruction, const byte& leftOperand, const byte& rightOperand);
 
+	// Assignment
 	bool ParseSet(const vector<string>& operands);
+
+	// Arithmetic
+	bool ParseArithmetic(Cpu::Instruction instruction, const vector<string>& operands);
 	bool ParseAdd(const vector<string>& operands);
+	bool ParseSubtract(const vector<string>& operands);
+
+	// Bitwise
+	bool ParseAnd(const vector<string>& operands);
+	bool ParseOr(const vector<string>& operands);
 
 
 private:    // Output
