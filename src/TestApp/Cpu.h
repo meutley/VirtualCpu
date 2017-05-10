@@ -22,7 +22,8 @@ public:
 	enum Instruction
 	{
 		// Assignment
-		SET = 0,
+		SETR = 0,    // Set from register
+		SET,         // Set from raw value
 
 		// Arithmetic
 		ADD,
@@ -74,7 +75,8 @@ private:    // Program
 
 private:    // Instruction Processors
 	// Assignment
-	void DoSet(const vector<byte>& pProgram);
+	void DoSetFromRegister(const vector<byte>& pProgram);
+	void DoSetFromRawValue(const vector<byte>& pProgram);
 
 	// Arithmetic
 	void DoAdd(const vector<byte>& pProgram);
@@ -85,7 +87,6 @@ private:    // Instruction Processors
 	void DoOr(const vector<byte>& pProgram);
 
 	// Output
-	void DoPrint(const byte& value);
 	void DoPrintRegister(const vector<byte>& pProgram);
 	void DoPrintValue(const vector<byte>& pProgram);
 };

@@ -41,7 +41,7 @@ vector<byte> Assembler::Assemble(const vector<string>& pCode)
 
 		auto combinedOperands = CombineStrings(line, 1);
 		auto operands = ParseOperands(combinedOperands);
-		
+
 		auto opCode = line[0];
 		// Assignment
 		if (opCode == Assembler::SET)
@@ -125,7 +125,7 @@ vector<string> Assembler::Split(const string& pInput)
 		stream >> temp;
 		result.push_back(temp);
 	}
-	
+
 	return result;
 }
 
@@ -140,13 +140,13 @@ string Assembler::Trim(const string& input)
 	string output = input;
 	auto leftPosition = input.find_first_not_of(' ');
 	auto rightPosition = input.find_last_not_of(' ');
-	
+
 	// Return untouched input string if no spaces found to trim
 	if (leftPosition > input.length() && rightPosition > input.length())
 	{
 		return input;
 	}
-	
+
 	return output.substr(leftPosition, rightPosition + 1);
 }
 
@@ -224,7 +224,7 @@ vector<string> Assembler::ParseOperands(const string& input, const byte& separat
 		currentOperand += trimmed[index];
 		index++;
 	}
-	
+
 	return result;
 }
 
@@ -243,7 +243,7 @@ bool Assembler::ParseByte(const string& value)
 		}
 	}
 
-	return ToByte(stoi(value));
+	return true;
 }
 
 bool Assembler::CheckOperands(const vector<string>& operands, const int& expectedCount)
@@ -309,34 +309,19 @@ bool Assembler::ParseSet(const vector<string>& operands)
 {
 	if (CheckOperands(operands, 2))
 	{
-		try
-		{
-			auto leftOperand = operands[0];
-			auto rightOperand = ToByte(stoi(operands[1]));
+		auto leftOperand = operands[0];
+		auto rightOperand = operands[1];
 
-			if (IsRegisterValid(leftOperand))
-			{
-				AddInstruction(Cpu::SET, GetRegisterId(leftOperand), rightOperand);
-			}
-			else
-			{
-				return false;
-			}
-		}
-		catch (invalid_argument invalidArg)
+		if (isalpha(rightOperand[0]))
 		{
-			cout << "ERROR: INVALID OPERAND" << endl;
-			cout << "   Right operand must be a valid integer, current = " << operands[1] << endl;
-			cout << "   LINE: " << (m_currentLine + 1) << endl;
-			cout << "      >> " << m_code[m_currentLine];
-			return false;
+			return ParseSetFromRegister(leftOperand, rightOperand);
 		}
-		catch (out_of_range outOfRange)
+		else if (isdigit(rightOperand[0]))
 		{
-			cout << "ERROR: INVALID OPERAND" << endl;
-			cout << "   Right operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << operands[1] << endl;
-			cout << "   LINE: " << (m_currentLine + 1) << endl;
-			cout << "      >> " << m_code[m_currentLine] << endl;
+			return ParseSetFromRawValue(leftOperand, rightOperand);
+		}
+		else
+		{
 			return false;
 		}
 	}
@@ -346,6 +331,55 @@ bool Assembler::ParseSet(const vector<string>& operands)
 	}
 
 	return true;
+}
+
+bool Assembler::ParseSetFromRegister(const string& destinationRegisterName, const string& sourceRegisterName)
+{
+	if (IsRegisterValid(destinationRegisterName) && IsRegisterValid(sourceRegisterName))
+	{
+		AddInstruction(Cpu::SETR, GetRegisterId(destinationRegisterName), GetRegisterId(sourceRegisterName));
+		return true;
+	}
+
+	return false;
+}
+
+bool Assembler::ParseSetFromRawValue(const string& destinationRegisterName, const string& rawValue)
+{
+	if (IsRegisterValid(destinationRegisterName) && ParseByte(rawValue))
+	{
+		try
+		{
+			// Attempt to parse the operand as a byte and add the instruction if valid
+			if (ParseByte(rawValue))
+			{
+				auto value = ToByte(stoi(rawValue));
+				AddInstruction(Cpu::Instruction::SET, GetRegisterId(destinationRegisterName), value);
+			}
+
+			return true;
+		}
+		catch (invalid_argument invalidArg)
+		{
+			cout << "ERROR: INVALID OPERAND" << endl;
+			cout << "   Right operand must be a valid integer, current = " << rawValue << endl;
+			cout << "   LINE: " << (m_currentLine + 1) << endl;
+			cout << "      >> " << m_code[m_currentLine];
+			return false;
+		}
+		catch (out_of_range outOfRange)
+		{
+			cout << "ERROR: INVALID OPERAND" << endl;
+			cout << "   Right operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << rawValue << endl;
+			cout << "   LINE: " << (m_currentLine + 1) << endl;
+			cout << "      >> " << m_code[m_currentLine] << endl;
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
 
 /* ========== Arithmetic ========== */
@@ -404,39 +438,15 @@ bool Assembler::ParsePrint(const vector<string>& operands)
 	{
 		auto printOperand = operands[0];
 
-		if (isalpha(printOperand[0]) && IsRegisterValid(printOperand))
+		if (isalpha(printOperand[0]))
 		{
 			// Print a register's value
-			AddInstruction(Cpu::Instruction::PRINTR, GetRegisterId(printOperand));
+			ParsePrintRegister(printOperand);
 		}
 		else if (!isalpha(printOperand[0]))
 		{
 			// Print a raw byte value
-			try
-			{
-				// Attempt to parse the operand as a byte and add the instruction if valid
-				if (ParseByte(printOperand))
-				{
-					auto value = ToByte(stoi(printOperand));
-					AddInstruction(Cpu::Instruction::PRINT, value);
-				}
-				else    // Could not parse byte
-				{
-					cout << "ERROR: INVALID OPERAND" << endl;
-					cout << "   Operand not a valid byte (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << printOperand << endl;
-					cout << "   LINE: " << (m_currentLine + 1) << endl;
-					cout << "      >> " << m_code[m_currentLine] << endl;
-					return false;
-				}
-			}
-			catch (out_of_range outOfRange)    // Value out of range for byte type
-			{
-				cout << "ERROR: INVALID OPERAND" << endl;
-				cout << "   Operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << operands[0] << endl;
-				cout << "   LINE: " << (m_currentLine + 1) << endl;
-				cout << "      >> " << m_code[m_currentLine] << endl;
-				return false;
-			}
+			ParsePrintRawValue(printOperand);
 		}
 		else    // Not a recognized command
 		{
@@ -445,6 +455,48 @@ bool Assembler::ParsePrint(const vector<string>& operands)
 	}
 	else    // Invalid operand(s)
 	{
+		return false;
+	}
+
+	return true;
+}
+
+bool Assembler::ParsePrintRegister(const string& registerName)
+{
+	if (IsRegisterValid(registerName))
+	{
+		AddInstruction(Cpu::Instruction::PRINTR, GetRegisterId(registerName));
+		return true;
+	}
+
+	return false;
+}
+
+bool Assembler::ParsePrintRawValue(const string& rawValue)
+{
+	try
+	{
+		// Attempt to parse the operand as a byte and add the instruction if valid
+		if (ParseByte(rawValue))
+		{
+			auto value = ToByte(stoi(rawValue));
+			AddInstruction(Cpu::Instruction::PRINT, value);
+		}
+		else    // Could not parse byte
+		{
+			cout << "ERROR: INVALID OPERAND" << endl;
+			cout << "   Operand not a valid byte (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << rawValue << endl;
+			cout << "   LINE: " << (m_currentLine + 1) << endl;
+			cout << "      >> " << m_code[m_currentLine] << endl;
+			return false;
+		}
+	}
+	catch (out_of_range outOfRange)    // Value out of range for byte type
+	{
+		cout << "ERROR: INVALID OPERAND" << endl;
+		cout << "   Operand out of range (min = 0, max = " + std::to_string((int)Cpu::MAX) + "), current = " << rawValue << endl;
+		cout << "   LINE: " << (m_currentLine + 1) << endl;
+		cout << "      >> " << m_code[m_currentLine] << endl;
 		return false;
 	}
 

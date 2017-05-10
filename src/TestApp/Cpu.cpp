@@ -44,8 +44,11 @@ void Cpu::Execute(vector<byte>& pProgram, const bool& pDumpOnProcessInstructions
 		switch (m_instructionRegister)
 		{
 		// Assignment
+		case SETR:
+			DoSetFromRegister(pProgram);
+			break;
 		case SET:
-			DoSet(pProgram);
+			DoSetFromRawValue(pProgram);
 			break;
 
 		// Arithmetic
@@ -164,7 +167,23 @@ void Cpu::CheckArithmeticResult(int& result)
 
 /* ========== Assignment ========== */
 
-void Cpu::DoSet(const vector<byte>& pProgram)
+void Cpu::DoSetFromRegister(const vector<byte>& pProgram)
+{
+	byte destinationRegisterId = pProgram[m_programCounter++];
+	byte sourceRegisterId = pProgram[m_programCounter++];
+	if (m_registers.find(destinationRegisterId) != m_registers.end() && m_registers.find(sourceRegisterId) != m_registers.end())
+	{
+		m_registers[destinationRegisterId] = m_registers[sourceRegisterId];
+	}
+
+	if (m_dumpOnProcessInstructions)
+	{
+		cout << "SETR instruction called..." << endl;
+		Dump();
+	}
+}
+
+void Cpu::DoSetFromRawValue(const vector<byte>& pProgram)
 {
 	byte destinationRegisterId = pProgram[m_programCounter++];
 	if (m_registers.find(destinationRegisterId) != m_registers.end())

@@ -54,6 +54,8 @@ private:    // Instructions and CPU
 
 	// Assignment
 	bool ParseSet(const vector<string>& operands);
+	bool ParseSetFromRegister(const string& destinationRegisterName, const string& sourceRegisterName);
+	bool ParseSetFromRawValue(const string& destinationRegisterName, const string& rawValue);
 
 	// Arithmetic
 	bool ParseArithmetic(Cpu::Instruction instruction, const vector<string>& operands);
@@ -66,6 +68,8 @@ private:    // Instructions and CPU
 
 	// Output
 	bool ParsePrint(const vector<string>& operands);
+	bool ParsePrintRegister(const string& registerName);
+	bool ParsePrintRawValue(const string& rawValue);
 
 
 private:    // Output

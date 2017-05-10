@@ -4,6 +4,24 @@
 # ==================================================
 
 
+# Set from raw value
+SET D0, 3
+SET D1, 5
+PRINT D0
+PRINT D1
+
+
+# Set from register
+SET D0, D1
+PRINT D1
+PRINT D0
+
+
+# Reset registers
+SET D0, 0
+SET D1, 0
+
+
 # Add
 #   3 + 7 (D0 = 10)
 SET	D0, 3
