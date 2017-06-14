@@ -31,3 +31,5 @@
 # Other Files
 *.sdf
 *.opensdf
+ipch/
+Debug/
